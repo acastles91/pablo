@@ -135,10 +135,10 @@ cv2.setWindowProperty("playback", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN
 video_quality = 30
 video_dir = os.getcwd() + "tmp/recordings/"
 video_len_sec = 60
-blackBackground = os.getcwd() +  "wp2787656.jpg"
-backgroundCommand = ["nohup", "feh", "--geometry", "+1920+0", "-F", str(blackBackground), "&>/dev/null", "&" ]
+blackBackground = "wp2787656.jpg"
+backgroundCommand = ["nohup", "feh", "--geometry", "+0+0", "-F", str(blackBackground), ">", "/dev/null"]
 #backgroundCommand = ["nohup", "feh", "--geometry", "+0+0", "-F", str(blackBackground), "&" ]
-subprocess.call(backgroundCommand)
+subprocess.Popen(backgroundCommand)
 print("background called")
 #cv2.destroyAllWindows()
 threadedCamera = ThreadedCamera()
