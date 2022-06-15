@@ -4,23 +4,12 @@ from picamera import PiCamera
 from time import sleep
 from threading import Thread
 import shutil
+import subprocess
+import shlex
+
 #import screeninfo
 # import pyglview
 
-
-# Parameters
-win_name = "playback"
-cv2.namedWindow("playback", cv2.WINDOW_NORMAL)
-cv2.setWindowProperty("playback", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-
-
-
-
-video_quality = 30
-video_dir = os.getcwd() + "/tmp/recordings/"
-video_len_sec = 5
-
-cv2.destroyAllWindows()
 
 class ThreadedCamera(object):
     def __init__(self):
@@ -31,16 +20,17 @@ class ThreadedCamera(object):
         self.camera.rotation = 180
         self.camera.start_preview(alpha=255)
 
+        self.camera.framerate = 25
         self.thread = Thread(target=self.record_videos, args=())
         self.thread.daemon = True
         self.thread.start()
 
     def record_videos(self):
-        self.camera.start_recording(video_dir + '/0.h264', quality = video_quality)
-        i = 0
+        self.camera.start_recording(video_dir + '/000.h264', quality = video_quality)
+        i = 1
         while True:
             self.camera.wait_recording(video_len_sec)
-            self.camera.split_recording(video_dir + '/%d.h264' % i)
+            self.camera.split_recording(video_dir + '/%03d.h264' % i)
             i = i + 1
         self.camera.stop_recording()
 
@@ -51,7 +41,7 @@ class ThreadedPlayer(object):
 
         # FPS = 1/X
         # X = desired FPS
-        self.FPS = 1/30
+        self.FPS = 1/25
         self.FPS_MS = int(self.FPS * 1000)
 
         # Start frame retrieval thread
@@ -69,8 +59,8 @@ class ThreadedPlayer(object):
                     self.capture.release()
                     return 
                 (self.status, self.frame) = self.capture.retrieve()
-            sleep(self.FPS)
-
+            #sleep(self.FPS)
+            sleep(25)
     def grab_frame(self):
         if (self.status):
             return self.frame
@@ -82,14 +72,10 @@ class ThreadedPlayer(object):
     def clean_up(self):
         self.capture.release()
 
+def externalPlayerCaller(video):
 
-threadedCamera = ThreadedCamera()
-# viewer = pyglview.Viewer()
-# viewer.enable_fullscreen()
-# viewer.set_window_name(win_name)
-
-sleep(video_len_sec + 1)
-print("after sleep")
+    cmd = ["ffplay", video]
+    subprocess.call(cmd)
 
 def getVideoList():
     files = []
@@ -101,6 +87,7 @@ def getVideoList():
 
 def playVideoList(files):
     i = len(files)
+    speed = 1
     for video in files:
         print("Playing video: " + video + " and skipping every " + str(i)  + "th frame")
         # cap = cv2.VideoCapture(video)
@@ -111,15 +98,23 @@ def playVideoList(files):
                 # viewer.set_image(frame)
         # viewer.set_loop(loop)
         # viewer.start()
-
-        threadplayer = ThreadedPlayer(video)
+        cmd = ["mpv", "--screen=0", "--fs",  "--fs-screen=1", "--speed=" + str(speed), video]
+        subprocess.call(cmd)
+        #thread = Thread(target=externalPlayerCaller, args=video)
+        #thread.daemon = True
+        #thread.start()
+        '''threadplayer = ThreadedPlayer(video)
         cv2.namedWindow("playback", cv2.WINDOW_NORMAL)
-        cv2.setWindowProperty("playback", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        cv2.setWindowProperty("playback", cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+        
+        #cv2.moveWindow("playback", -900, 0)
+                       
                 
         while threadplayer.is_opened():
             frame = threadplayer.grab_frame()
             
             if (frame is not None):
+                cv2.moveWindow("playback", 1800,900) 
                 cv2.imshow("playback", frame,)
                 
                 
@@ -128,13 +123,37 @@ def playVideoList(files):
                 threadplayer.clean_up()
                 break
         threadplayer.clean_up()
-
+'''
         i = i - 1
 
+# Parameters
+win_name = "playback"
+cv2.namedWindow("playback", cv2.WINDOW_NORMAL)
+cv2.setWindowProperty("playback", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+#cv2.namedWindow("playback", cv2.WINDOW_NORMAL)
+#cv2.setWindowProperty("playback", cv2.WND_PROP_OPENGL, cv2.WINDOW_NORMAL)
+video_quality = 30
+video_dir = os.getcwd() + "tmp/recordings/"
+video_len_sec = 60
+blackBackground = os.getcwd() +  "wp2787656.jpg"
+backgroundCommand = ["nohup", "feh", "--geometry", "+0+0", "-F", str(blackBackground), "&>/dev/null", "&" ]
+#backgroundCommand = ["nohup", "feh", "--geometry", "+0+0", "-F", str(blackBackground), "&" ]
+subprocess.call(backgroundCommand)
+print("background called")
+#cv2.destroyAllWindows()
+threadedCamera = ThreadedCamera()
+# viewer = pyglview.Viewer()
+# viewer.enable_fullscreen()
+# viewer.set_window_name(win_name)
+
+sleep(video_len_sec + 1)
+print("after sleep")
 files = getVideoList()
 print(files)
 
 i = 1
+#test = os.getcwd() + "/tmp/recordings/0.h264"
+#threadedPlayer = ThreadedPlayer(test)
 
 while True:
     files = getVideoList()
@@ -142,6 +161,7 @@ while True:
     print(files)
     playVideoList(files)
     i = i + 1
-
-
-cv2.destroyAllWindows()
+'''while True:
+    cv2.VideoCapture(test + "0.h264")
+#cv2.destroyAllWindows()
+'''
